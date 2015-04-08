@@ -1,0 +1,35 @@
+Step 0: datamod.f
+	include CRUV_DATA parameter block % possible AVINDEX?
+	include logical CRIUVP in PARAMETERS block 
+Step 1: parameter.in
+	set to .true. ! CRiUVp
+Step 2: read_parameters.f
+	add space in front of “CRI” @ LO439 LN856 % so it’s not confused between CRI and CRIUVP
+	use PARAMETERS…, CRIUVP @ LO75 LN121
+	namelist…, CRIUVP @ LN282
+	set CRIUVP to .false. @ LO333 LN688
+	add elseif block for CRIUVP read @ LO1049 LN1856
+Step 3: prodimo.f
+	call INIT_CRUV @ LO60 LN61/63 % before/after re-call of read_parameters (?)
+Step 4: rate_coeffs.f
+	use PARAMETERS…, CRIUVP @ LO38 LN43
+	use CRUV_DATA, ONLY: CRAV, CRAVMAX @ LO52 LN75 % possible AVINDEX (?)
+	split else for CR and R5 reactions but leave R5 rate intact @ LO320 LN851
+	add else CRIUVP=.true. and CRAV>CRAVMAX call CRRATES block % sets rate(r) to local CR ionization rate 
+Step 5: chemfunc.f
+	use PARAMETERS…, CRIUVP @ LO12 LN13
+	use CRUV_DATA, ONLY: CRAV, CRAVMAX, EFF @ LO19 LN23 
+	if CR then call crrates(r) dndt=rate(r)*AA(r,1)*EFF(r)*0.5 @ LO139 LN198 % right after dndt=rate(r)
+Step 6: chemjacobi.f % rate needs to be calculated again for every given combination of nH, nmol
+	use PARAMETERS…, CRIUVP @ LON24
+	use CRUV_DATA, ONLY: CRAV, CRAVMAX, EFF @ LO29 LN31 
+	if CR then call crrates(r) dndt=rate(r)*AA(r,1)*EFF(r)*0.5 @ LO128 LN149 % right after dndt=rate(r)
+	if CR call CRUVJACOBIAN LO249 LN345 % before x-ray block is called
+Step 7: cruvjacobian.f
+	use REACTIONS_LOC,ONLY: rate % instead of using it from REACTIONS (as of 2015)
+Step 8: Update makefile.objects according to file_list
+
+	
+
+
+	
